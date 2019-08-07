@@ -1,0 +1,5 @@
+.idea/
+.vscode/
+_/
+node_modules/
+tsconfig.tsbuildinfo

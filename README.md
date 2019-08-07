@@ -1,53 +1,60 @@
 # API for 3rd party providers
 
+This repository provides api documentation and code examples how to create providers for Citopia app.
+
+
+## API
+
+If you want to create your own app for Citopia, 
+you need to implement a web api with listed endpoints:
+
 ### `/services`
 
-Lists all services provider provides. 
+Lists all services provider provides.
 It can be anything - car share, bike rent, parking, etc.
 
 Endpoint must return `Service[]`.
 
 ```typescript
 type Service = {
-
   /**
    * Unique service id for this provider.
    */
-  id: string
+  id: string;
 
   /**
    * Service icon url.
    */
-  icon: string
+  icon: string;
 
   /**
    * Service name.
    */
-  name: string
+  name: string;
 
   /**
    * Service description.
    */
-  description: string
+  description: string;
 
   /**
    * Indicates if service will be paid or not.
    * Paid services user will be able to pay via Citopia app.
    */
-  paid: boolean
+  paid: boolean;
 
   /**
    * Services has different flows.
    * Each service type described in the document.
    */
-  type: "type-a" | "type-b" | "type-c" | "type-d"
+  type: "type-a" | "type-b" | "type-c" | "type-d";
 
   /**
    * Vehicle type is used to understand what is used for the trip.
    * (for example, if current trip is walking or biking - we don't need to suggest a parking lot)
    */
-  vehicleType: "none" | "bike" | "car"
-}
+  vehicleType: "none" | "bike" | "car" | "taxi";
+};
 ```
 
 Example:
@@ -56,62 +63,61 @@ Example:
 app.get("/services", function(req, res) {
   res.json([
     {
-      id: "bike",
-      icon: "https://cdn1.iconfinder.com/data/icons/streamline-transportation/60/cell-0-2-240.png",
-      name: "Bike Rent",
-      description: "Pick bike and ride for free!",
-      paid: false,
-      type: "type-b",
-      vehicleType: "bike"
-    },
-    {
-      id: "scooter",
-      icon: "https://cdn1.iconfinder.com/data/icons/transport-3-11/32/Kick_Scooter-256.png",
-      name: "Scooter Rent",
-      description: "Pick electricity-based scooter for greener world!",
+      id: "taxi",
+      icon: `http://localhost:3000/assets/images/taxi.png`,
+      name: "Taxi",
+      description: "Cheapest taxi in Citopia!",
       paid: true,
       type: "type-c",
-      vehicleType: "bike"
+      vehicleType: "taxi",
+    },
+    {
+      id: "scooter"
+      icon: `http://localhost:3000/assets/images/scooter.png`,
+      name: "Scooter",
+      description: "Rent a scooter and rule the world!",
+      paid: true,
+      type: "type-b",
+      vehicleType: "bike",
     }
   ]);
 });
 ```
-  
+
 ### `/bits`
-  
-Bit is a point on the map. It can be anything - car, bike, shop, parking lot, etc.
+
+Bit is a marker on the map. It can be anything - car, bike, shop, parking lot, etc.
 It can also represent different states of the same item.
 
 Endpoint must return `Bit[]`.
 
 ```typescript
 type Bit = {
-
   /**
    * Unique bit id for this provider.
    */
-  id: string
+  id: string;
 
   /**
    * Bit icon url.
    */
-  icon: string
+  icon: string;
 
   /**
    * Bit name.
    */
-  name: string
+  name: string;
 
   /**
    * Bit description.
    */
-  description: string
+  description: string;
 
   /**
    * Bit color on the map.
    */
-  color: string
-}
+  color: string;
+};
 ```
 
 Example:
@@ -120,243 +126,158 @@ Example:
 app.get("/bits", function(req, res) {
   res.json([
     {
-      id: "bike-station",
-      icon: "https://cdn1.iconfinder.com/data/icons/streamline-transportation/60/cell-0-2-240.png",
-      name: "Bike Rent Station #1",
-      description: "Bike Rent Station Downtown",
-      color: "#ff8300",
+      id: "taxi",
+      icon: `http://localhost:3000/assets/images/taxi-bit.png`,
+      name: "Car",
+      color: "#fffb25",
+      description: "Call taxi",
     },
     {
-      id: "scooter-station",
-      icon: "https://cdn1.iconfinder.com/data/icons/transport-3-11/32/Kick_Scooter-256.png",
-      name: "Scooter Rent Station #1",
-      description: "Scooter Rent Station Downtown",
-      color: "#00a7ff",
-    }
+      id: "scooter",
+      icon: `http://localhost:3000/assets/images/scooter-bit.png`,
+      name: "Scooter",
+      color: "#65ffdd",
+      description: "Rent scooter",
+    },
   ]);
 });
 ```
-  
-### `/services-availability`
 
-Checks what services are available at the given moment for the given geo points.
+### `/register`
 
-Endpoint accepts following query parameters:
-
-* `currentLatitude` - geo position (latitude) where user is currently located
-* `currentLongitude` - geo position (longitude) where user is currently located
-* `destinationLatitude` - geo position (longitude) of selected location (can be empty if user didn't select any point)
-* `destinationLongitude` - geo position (latitude) of selected location (can be empty if user didn't select any point)
-
-Endpoint must return `string[]`, where each item in the string array is service id.
-
-Example:
-
-```typescript
-app.get("/services-availability", function(req, res) {
-  const currentLatitude = req.query.currentLatitude;
-  const currentLongitude = req.query.currentLongitude;
-  const destinationLatitude = req.query.destinationLatitude;
-  const destinationLongitude = req.query.destinationLongitude;
-
-  // now we need to return all our service identifiers available for the given geo points
-  res.json([
-    "bike",
-    "scooter",
-  ]);
-});
-```
-  
-### `/service-info`
-
-Provides information about selected service.
-For example if Uber cars were selected, it shows all cars available near user location.
+Starts process of using particular service. 
+For example, it can be a new trip or parking usage.
 
 Endpoint accepts following query parameters:
 
-* `serviceId` - requested service id
-* `currentLatitude` - geo position (latitude) where user is currently located
-* `currentLongitude` - geo position (longitude) where user is currently located
-* `destinationLatitude` - geo position (longitude) of selected location (can be empty if user didn't select any point)
-* `destinationLongitude` - geo position (latitude) of selected location (can be empty if user didn't select any point)
-
-Endpoint must return `ServiceInfo` object.
-
-```typescript
-type ServiceInfo = {
-  
-  /**
-   * Bits to be shown realtime on the map.
-   */
-  mapBits: {
-    
-    /**
-     * Unique MapBit id. 
-     */
-    id: string
-    
-    /**
-     * Bit to be used for this MapBit.
-     * It can be id of any registered Bit.
-     */
-    bitId: string
-    
-    /**
-     * Bit current geo position on the map (latitude).
-     */
-    latitude: number
-    
-    /**
-     * Bit current geo position on the map (longitude).
-     */
-    longitude: number
-    
-  }[]
-}
-```
-
-Example:
-
-```typescript
-app.get("/service-info", function(req, res) {
-
-  const serviceId = req.query.serviceId;
-  const currentLatitude = req.query.currentLatitude;
-  const currentLongitude = req.query.currentLongitude;
-  const destinationLatitude = req.query.destinationLatitude;
-  const destinationLongitude = req.query.destinationLongitude;
-
-  // now we need to return all map bits available for the given service and their geo points
-
-  res.json({
-    mapBits: [
-      { id: "bike on bulevardi 22", bitId: "bike", latitude: 0, longitude: 0 },
-      { id: "scooter on bulevardi 22", bitId: "scooter", latitude: 0, longitude: 0 },
-    ]
-  });
-
-});
-```
-
-### `/trip-register`
-
-Registers a new trip. For example, when user pickups bike and presses "start ride" button.
-
-Endpoint accepts following query parameters:
-
-* `userId` - user id, trip initiator
-* `serviceId` - requested service id
-* `mapBitId` - selected map bit id. Optional, for some service types it can't be empty
-
-Endpoint must return `TripRegisterInfo` object.
-
-```typescript
-type TripRegisterInfo = {
-
-  /**
-   * Newly registered trip id.
-   */
-  tripId: string
-
-}
-```
-
-Example:
-
-```typescript
-app.get("/trip-register", function(req, res) {
-
-  const userId = req.query.userId;
-  const serviceId = req.query.serviceId;
-  const mapBitId = req.query.mapBitId; // optional
-
-  // if mapBitId isn't present, its our responsibility to create it for user and register it for the current trip
-  // for example Uber provider selects car on his own and store this information in their db
-
-  // here, we need to register trip in our database
-
-  // then return back trip id
-  res.json({
-    id: "trip #1"
-  });
-
-});
-```
-
-### `/trip-complete`
-
-Finishes trip. For example, when user stops riding bike and presses "finish ride" button.
-
-Endpoint accepts following query parameters:
-
-* `tripId` - trip id to be finished
-* `status` - can be either "finished" or "canceled"
+| Query Param    | Description                                                                                  | Can be empty |
+|----------------|----------------------------------------------------------------------------------------------|--------------|
+| userId         | user id, trip initiator                                                                      | no           |
+| serviceId      | service id to be registered for usage                                                        | no           |
+| currentLat     | trip initiator current position (latitude)                                                   | no           |
+| currentLng     | trip initiator current position (longitude)                                                  | no           |
+| destinationLat | geo position (longitude) of selected location (empty if user didn't select any point)        | yes          |
+| destinationLng | geo position (latitude) of selected location (empty if user didn't select any point)         | yes          |
+| mapBitId       | selected bit on the map (used in some service types)                                         | yes          |
+| activeTripId   | if user already has an active trip, its id will be sent to this endpoint                     | yes          |
 
 Endpoint must return `StatusResponse` object.
 
 ```typescript
 type StatusResponse = {
-
   /**
-   * Executed operation result. 
+   * Executed operation result.
    */
-  status: "success"
-
-}
+  status: "success" | "invalid" | "error" | "not-found"
+  
+  /**
+   * Optional status message to inform about error, 
+   * useful for debugging purposes.
+   */
+  message?: string
+};
 ```
 
 Example:
 
 ```typescript
-app.get("/trip-complete", function(req, res) {
+app.get("/register", function(req, res) {
+  const userId = req.query.userId;
+  const serviceId = req.query.serviceId;
+  const currentLat = req.query.currentLat;
+  const currentLng = req.query.currentLng;
+  const destinationLat = req.query.destinationLat; // optional
+  const destinationLng = req.query.destinationLng; // optional
+  const mapBitId = req.query.mapBitId; // optional
+  const activeTripId = req.query.activeTripId; // optional
 
-  const tripId = req.query.tripId;
-  const status = req.query.status;
-
-  // status can be either: "finished" either "canceled"
-
-  // here we can cancel our trip
-
-  // then return back success result
+  // here, we need to register service usage in our database
+  
   res.json({
     status: "success"
   });
-
 });
 ```
 
-### `/trip-track`
+### `/complete`
 
-Tracks current trip progress. 
-For example, when user walks we need to track his position to count his scores.
+Finishes trip or any other service usage. 
+For example, when user stops riding a bike and presses "finish ride" button.
 
 Endpoint accepts following query parameters:
 
-* `tripId` - trip id
-* `currentLatitude` - geo position (latitude) where user is currently located
-* `currentLongitude` - geo position (longitude) where user is currently located
-
+| Query Param    | Description                            | Can be empty |
+|----------------|----------------------------------------|--------------|
+| userId         | user whose trip will be completed      | no           |
+| serviceId      | service to be completed                | no           |
+  
 Endpoint must return `StatusResponse` object.
 
 ```typescript
 type StatusResponse = {
-
   /**
-   * Executed operation result. 
+   * Executed operation result.
    */
-  status: "success"
-
-}
+  status: "success" | "invalid" | "error" | "not-found"
+  
+  /**
+   * Optional status message to inform about error, 
+   * useful for debugging purposes.
+   */
+  message?: string
+};
 ```
 
 Example:
 
 ```typescript
-app.get("/trip-track", function(req, res) {
+app.get("/complete", function(req, res) {
+  const userId = req.query.userId;
+  const status = req.query.status;
 
-  const tripId = req.query.tripId;
-  const currentLatitude = req.query.currentLatitude;
-  const currentLongitude = req.query.currentLongitude;
+  res.json({
+    status: "success"
+  });
+});
+```
+
+### `/track`
+
+Tracks user location during service usage.
+For example, when user walks we need to track his geo position to count his scores.
+
+Endpoint accepts following query parameters:
+
+| Query Param    | Description                                                  | Can be empty |
+|----------------|--------------------------------------------------------------|--------------|
+| userId         | user whose trip will be completed                            | no           |
+| currentLat     | geo position (latitude) where user is currently located      | no           |
+| currentLng     | geo position (longitude) where user is currently located     | no           |
+  
+Endpoint must return `StatusResponse` object.
+
+```typescript
+type StatusResponse = {
+  /**
+   * Executed operation result.
+   */
+  status: "success" | "invalid" | "error" | "not-found"
+  
+  /**
+   * Optional status message to inform about error, 
+   * useful for debugging purposes.
+   */
+  message?: string
+};
+```
+
+Example:
+
+```typescript
+app.get("/track", function(req, res) {
+  const userId = req.query.userId;
+  const currentLat = req.query.currentLat;
+  const currentLng = req.query.currentLng;
 
   // here we can store information about user position change
 
@@ -367,180 +288,188 @@ app.get("/trip-track", function(req, res) {
 });
 ```
 
-### `/trip-info`
+### `/service-info`
 
-Provides information about active trip.
+Provides information about available and used services.
+For example if Uber cars were selected, it shows all cars available near user location.
 
 Endpoint accepts following query parameters:
 
-* `tripId` - trip id
+| Query Param                | Description                                                                                  | Can be empty |
+|----------------------------|----------------------------------------------------------------------------------------------|--------------|
+| userId                     | user id, trip initiator                                                                      | no           |
+| serviceId                  | service id to be registered for usage                                                        | no           |
+| currentLat                 | trip initiator current position (latitude)                                                   | no           |
+| currentLng                 | trip initiator current position (longitude)                                                  | no           |
+| destinationLat             | geo position (longitude) of selected location (empty if user didn't select any point)        | yes          |
+| destinationLng             | geo position (latitude) of selected location (empty if user didn't select any point)         | yes          |
+| recordingServiceTypes      | if user already has an active trip, its id will be sent to this endpoint                     | yes          |
+| recordingServiceTypes      | if user already has an active trip, its id will be sent to this endpoint                     | yes          |
+| activeTripId               | if user already has an active trip, its id will be sent to this endpoint                     | yes          |
 
-Endpoint must return `TripInfo` object.
+Endpoint must return `ServiceInfo` object.
 
 ```typescript
-type TripInfo = {
-
+type ServiceInfo = {
   /**
-   * Trip id.
+   * Provider id.
+   */
+  providerId?: string
+  
+  /**
+   * Service id.
+   */
+  serviceId?: string
+  
+  /**
+   * Bits to be shown realtime on the map.
+   * It can be place of parking slots, moving cars, etc.
+   */
+  mapBits?: MapBit[]
+  
+  /**
+   * Bit currently in usage.
+   */
+  mapBitId?: string
+  
+  /**
+   * Indicates if service is ready for payment.
+   */
+  readyForPay?: boolean
+  
+  /**
+   * Indicates if tracking should be enabled.
+   * If tracking is enabled, app will send location information to "/track" endpoint.
+   */
+  track?: boolean
+  
+  /**
+   * Information message about current status of the service usage.
+   */
+  statusMessage?: string
+  
+  /**
+   * How much money is going to charge this service usage (user representation).
+   */
+  cost?: string
+  
+  /**
+   * How much money is going to charge this service usage (crypto coins).
+   */
+  tokens?: number
+}
+
+type MapBit = {
+  /**
+   * Unique MapBit id.
    */
   id: string
 
   /**
-  * Trip status.
-  */
-  status: "waiting" | "in-progress" | "finished" | "canceled"
-
-  /**
-  * Information message about current status of the trip.
-  */
-  statusMessage: string
-
-  /**
-  * How much money is going to charge this trip.
-  */
-  cost: string
-
-  /**
-  * Distance was made on this trip.
-  */
-  distance: string
-
-  /**
-  * How long this trip lasts.
-  */
-  duration: string
-
-  /**
-   * Bits to be shown realtime on the map.
+   * Bit to be used for this MapBit.
+   * It can be id of any registered Bit.
    */
-  mapBits: {
-    
-    /**
-     * Unique MapBit id. 
-     */
-    id: string
-    
-    /**
-     * Bit to be used for this MapBit.
-     * It can be id of any registered Bit.
-     */
-    bitId: string
-    
-    /**
-     * Bit current geo position on the map (latitude).
-     */
-    latitude: number
-    
-    /**
-     * Bit current geo position on the map (longitude).
-     */
-    longitude: number
-    
-  }[]
+  bitId: string
 
+  /**
+   * Bit current geo position on the map (latitude).
+   */
+  lat: number
+
+  /**
+   * Bit current geo position on the map (longitude).
+   */
+  lng: number
+
+  /**
+   * Indicates if map bit should be placed on a current user point.
+   */
+  currentPosition: boolean
+
+  /**
+   * Indicates if map bit should be placed on a user destination point.
+   */
+  destinationPosition: boolean
 }
 ```
 
 Example:
 
 ```typescript
-app.get("/trip-info", function(req, res) {
-
-  const tripId = req.query.tripId;
-
-  // here we send information about our trip being in progress
-  // we also return back current bike position
-
-  // statusMessage can be used to specify exact state of the map bit, for example
-  // "vehicle arrives" or "trip is in progress" or "arrived to destination"
-  res.json({
-    id: "trip #1",
-    status: "in-progress", // also can be: "finished", "canceled", "waiting"
-    statusMessage: "Trip is in progress...",
-    cost: "75",
-    distance: "15 miles",
-    duration: 100000,
-    mapBits: [
-      { id: "bike on bulevardi 22", bitId: "bike", latitude: 10, longitude: 10 },
-    ]
-  });
-});
-```
-
-### `/trip-service-suggestions`
-
-Suggests user additional services during his trip.
-For example app can suggest parking lot or pay a bridge checkpoint.
-
-Endpoint accepts following query parameters:
-
-* `tripServiceType` - current trip's service type
-* `tripServiceVehicleType` - current trip's vehicle type
-* `currentLatitude` - geo position (latitude) where user is currently located
-* `currentLongitude` - geo position (longitude) where user is currently located
-* `destinationLatitude` - geo position (longitude) of selected location (can be empty if user didn't select any point)
-* `destinationLongitude` - geo position (latitude) of selected location (can be empty if user didn't select any point)
-
-Endpoint must return `TripServiceSuggestion` object.
-
-```typescript
-type TripServiceSuggestion = {
-
-  /**
-   * Suggested service id.
-   */
-  serviceId: string
+app.get("/service-info", async function(req, res) {
   
-  /**
-   * Bits to be shown realtime on the map.
-   */
-  mapBits: {
-    
-    /**
-     * Unique MapBit id. 
-     */
-    id: string
-    
-    /**
-     * Bit to be used for this MapBit.
-     * It can be id of any registered Bit.
-     */
-    bitId: string
-    
-    /**
-     * Bit current geo position on the map (latitude).
-     */
-    latitude: number
-    
-    /**
-     * Bit current geo position on the map (longitude).
-     */
-    longitude: number
-    
-  }[]
+  const serviceId = req.query.serviceId;
+  const userId = req.query.userId;
+  const currentLat = req.query.currentLat;
+  const currentLng = req.query.currentLng;
+  const destinationLat = req.query.destinationLat;
+  const destinationLng = req.query.destinationLng;
 
-}
-```
+  // load exist trip for the current user from the database
+  const trip = await loadTripFromDatabase({ userId, serviceId })
 
-Example:
+  // if there is no trip for the current user,
+  // simply return all services we have
+  if (!trip) {
+    res.json([
+      { serviceId: "owner-vehicle" },
+      { serviceId: "owner-bike" },
+      { serviceId: "owner-walk" },
+    ])
+    return
+  }
 
-```typescript
-app.get("/trip-service-suggestions", function(req, res) {
+  // but if there is a trip, we return a service information about it
 
-  const tripServiceType = req.query.tripServiceType;
-  const tripServiceVehicleType = req.query.tripServiceVehicleType;
+  // build list of map bits we show on the map
+  const mapBits: any[] = []
+  if (trip.serviceId === "owner-vehicle") {
+    mapBits.push({
+      id: "owner-vehicle-id",
+      bitId: "owner-vehicle",
+      currentPosition: true,
+    })
+  } else if (trip.serviceId === "owner-bike") {
+    mapBits.push({
+      id: "owner-bike-id",
+      bitId: "owner-bike",
+      currentPosition: true,
+    })
+  } else if (trip.serviceId === "owner-walk") {
+    mapBits.push({
+      id: "owner-walk-id",
+      bitId: "owner-walk",
+      currentPosition: true,
+    })
+  }
 
-  const currentLatitude = req.query.currentLatitude;
-  const currentLongitude = req.query.currentLongitude;
+  // build a status message we should show during the trip
+  let statusMessage = ""
+  if (trip.serviceId === "owner-vehicle") {
+    statusMessage = "Driving a vehicle..."
+  } else if (trip.serviceId === "owner-bike") {
+    statusMessage = "Driving a bike..."
+  } else if (trip.serviceId === "owner-walk") {
+    statusMessage = "Walking..."
+  }
 
-  const destinationLatitude = req.query.destinationLatitude;
-  const destinationLongitude = req.query.destinationLongitude;
-
-  res.json({
-    serviceId: "parking service",
-    mapBits: [
-      { id: "parking on bulevardi 22", bitId: "parking", latitude: 10, longitude: 10 },
-    ]
-  });
+  res.json([
+    {
+      serviceId: trip.serviceId,
+      mapBits,
+      statusMessage,
+      track: true,
+      cost: "",
+      tokens: 0,
+    },
+  ])
 });
 ```
+
+## Examples
+
+There are 3 sample provider implementations that show you how you can implement your own providers easily:
+
+* [CityRide](./cityride) - provides services to run your own vehicle or just walking
+* [CityServices](./cityservices) - provides paid services during trips, like parking and paid bridge
+* [RideRent](./riderent) - provides complex services like taxi and scooter rent
