@@ -15,7 +15,7 @@ export const servicesAction = action(() => {
       name: "Car",
       description: "Drive your own vehicle",
       paid: false,
-      type: "type-c",
+      type: "type-a",
       vehicleType: "car",
     },
     {
@@ -24,7 +24,7 @@ export const servicesAction = action(() => {
       name: "Bike",
       description: "Drive your own bike",
       paid: false,
-      type: "type-b",
+      type: "type-a",
       vehicleType: "bike",
     },
     {
